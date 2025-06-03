@@ -1,7 +1,9 @@
 package main
 
+// NewsData stores information
+// about a news article.
 type NewsData struct {
-	Title  string     `json:"title"`
-	Link   string     `json:"link"`
-	Source NewsSource `json:"source"`
+	Title  string
+	Link   string
+	Source NewsSource
 }
