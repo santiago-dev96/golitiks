@@ -19,27 +19,42 @@ type NewsStorage struct {
 
 // NewNewsStorage initializes a NewsStorage
 // entity.
-func NewNewsStorage(filename string) *NewsStorage {
+func NewNewsStorage(filename, titleText, linkText, sourceText string) (*NewsStorage, error) {
 	file := excelize.NewFile()
-	return &NewsStorage{excelizeHandle: file, filename: filename}
+	index, err := file.NewSheet(sheetName)
+	if err != nil {
+		return nil, err
+	}
+	err = file.SetCellValue(sheetName, "A1", titleText)
+	if err != nil {
+		return nil, err
+	}
+	err = file.SetCellValue(sheetName, "B1", linkText)
+	if err != nil {
+		return nil, err
+	}
+	err = file.SetCellValue(sheetName, "C1", sourceText)
+	if err != nil {
+		return nil, err
+	}
+	file.SetActiveSheet(index)
+	return &NewsStorage{excelizeHandle: file, filename: filename + ".xlsx"}, nil
 }
 
 // Store saves NewsData to the file
 // the receiver has internally.
-func (ns *NewsStorage) Store(data []NewsData) error {
-	for _, newsData := range data {
-		row := ns.recordsWritten + 2 // +2 to account for header row
-		if err := ns.excelizeHandle.SetCellValue(sheetName, "A"+strconv.Itoa(row), newsData.Title); err != nil {
-			return err
-		}
-		if err := ns.excelizeHandle.SetCellValue(sheetName, "B"+strconv.Itoa(row), newsData.Link); err != nil {
-			return err
-		}
-		if err := ns.excelizeHandle.SetCellValue(sheetName, "C"+strconv.Itoa(row), string(newsData.Source)); err != nil {
-			return err
-		}
-		ns.recordsWritten++
+func (ns *NewsStorage) Store(data NewsData) error {
+	row := ns.recordsWritten + 2 // +2 to account for header row
+	if err := ns.excelizeHandle.SetCellValue(sheetName, "A"+strconv.Itoa(row), data.Title); err != nil {
+		return err
 	}
+	if err := ns.excelizeHandle.SetCellValue(sheetName, "B"+strconv.Itoa(row), data.Link); err != nil {
+		return err
+	}
+	if err := ns.excelizeHandle.SetCellValue(sheetName, "C"+strconv.Itoa(row), string(data.Source)); err != nil {
+		return err
+	}
+	ns.recordsWritten++
 	return nil
 }
 
