@@ -4,6 +4,8 @@ import (
 	"regexp"
 )
 
+// A source of news, a company that
+// works with news.
 type NewsSource string
 
 const elNacional NewsSource = "El Nacional"
@@ -14,6 +16,8 @@ var elNacionalHostRegex = regexp.MustCompile(`elnacional`)
 var elUniversalHostRegex = regexp.MustCompile(`eluniversal`)
 var cnnHostRegex = regexp.MustCompile(`cnn`)
 
+// Parses a string to know if a URL host matches
+// one of the supported news sources.
 func getNewsSource(host string) NewsSource {
 	if elNacionalHostRegex.MatchString(host) {
 		return elNacional
