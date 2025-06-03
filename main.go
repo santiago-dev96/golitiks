@@ -3,41 +3,69 @@ package main
 import (
 	"flag"
 	"log"
-	"strconv"
+	"os"
+	"sync"
 
 	"github.com/gocolly/colly"
-	"github.com/xuri/excelize/v2"
 )
 
-var data = make([]NewsData, 0)
-var outputFilename = flag.String("output", "", "XLSX file name to save news data")
+var titleText = flag.String("title", "Title", "Title of the news article")
+var linkText = flag.String("link", "Link", "Link to the news article")
+var sourceText = flag.String("source", "Source", "Source of the news article")
+
+var mu sync.Mutex
 
 func main() {
 	flag.Parse()
-	file := excelize.NewFile()
+	log.SetFlags(0)
+	outputFilename := flag.Arg(0)
+	if outputFilename == "" {
+		log.Println("Output filename must be provided")
+		log.Println("\nUsage: golitiks <filename> [-title <title>] [-link <link>] [-source <source>]")
+		log.Println()
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+	newsStorage, err := NewNewsStorage(outputFilename, *titleText, *linkText, *sourceText)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	defer func() {
-		if err := file.Close(); err != nil {
-			log.Fatalf("Error closing file: %v", err)
+		if err := newsStorage.Close(); err != nil {
+			log.Fatalln(err)
 		}
 	}()
-	index, err := file.NewSheet("News Data")
-	if err != nil {
-		log.Fatalf("Error creating new sheet: %v", err)
+	elNacionalScrapper := NewNewsScrapper(elNacionalURL)
+	elNacionalDatach, elNacionalErrch := elNacionalScrapper.Scrape(elNacionalScrapeFn)
+	totalScrapeOps := 1
+	scrapeOpsFinished := 0
+outer:
+	for {
+		select {
+		case newsData := <-elNacionalDatach:
+			err := newsStorage.Store(newsData)
+			if err != nil {
+				panic(err)
+			}
+		case err := <-elNacionalErrch:
+			if err != nil {
+				log.Println(err)
+			}
+			mu.Lock()
+			scrapeOpsFinished++
+			mu.Unlock()
+			if scrapeOpsFinished == totalScrapeOps {
+				break outer
+			}
+		}
 	}
-	err = file.SetCellValue("News Data", "A1", "Título")
+	err = newsStorage.Save()
 	if err != nil {
-		log.Fatalf("Error setting cell value: %v", err)
+		log.Fatalln(err)
 	}
-	err = file.SetCellValue("News Data", "B1", "Enlace")
-	if err != nil {
-		log.Fatalf("Error setting cell value: %v", err)
-	}
-	err = file.SetCellValue("News Data", "C1", "Fuente")
-	if err != nil {
-		log.Fatalf("Error setting cell value: %v", err)
-	}
-	file.SetActiveSheet(index)
-	c := colly.NewCollector()
+}
+
+func elNacionalScrapeFn(c *colly.Collector, datach chan<- NewsData, errch chan<- error) {
 	c.OnHTML(".module-category", func(e *colly.HTMLElement) {
 		link := e.ChildAttr("a", "href")
 		source := getNewsSource(e.Request.URL.Host)
@@ -47,7 +75,7 @@ func main() {
 			Link:   link,
 			Source: source,
 		}
-		data = append(data, newsData)
+		datach <- newsData
 	})
 	c.OnHTML(".list-articles .article", func(e *colly.HTMLElement) {
 		title := e.ChildText(".content .title")
@@ -58,27 +86,12 @@ func main() {
 			Link:   link,
 			Source: source,
 		}
-		data = append(data, newsData)
+		datach <- newsData
+	})
+	c.OnError(func(r *colly.Response, err error) {
+		errch <- err
 	})
 	c.OnScraped(func(r *colly.Response) {
-		for i, newsData := range data {
-			err := file.SetCellValue("News Data", "A"+strconv.Itoa(i+2), newsData.Title)
-			if err != nil {
-				log.Fatalf("Error setting cell value for title: %v", err)
-			}
-			err = file.SetCellValue("News Data", "B"+strconv.Itoa(i+2), newsData.Link)
-			if err != nil {
-				log.Fatalf("Error setting cell value for link: %v", err)
-			}
-			err = file.SetCellValue("News Data", "C"+strconv.Itoa(i+2), newsData.Source)
-			if err != nil {
-				log.Fatalf("Error setting cell value for source: %v", err)
-			}
-		}
-		err := file.SaveAs(*outputFilename + ".xlsx")
-		if err != nil {
-			log.Fatalf("Error saving file: %v", err)
-		}
+		errch <- nil
 	})
-	c.Visit("https://www.elnacional.com/politica")
 }
