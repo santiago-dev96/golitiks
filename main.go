@@ -10,7 +10,7 @@ import (
 )
 
 var data = make([]NewsData, 0)
-var outputFilename = flag.String("output", "data", "XLSX file name to save news data")
+var outputFilename = flag.String("output", "", "XLSX file name to save news data")
 
 func main() {
 	flag.Parse()
