@@ -12,6 +12,8 @@ const elNacional NewsSource = "El Nacional"
 const cnn NewsSource = "CNN"
 const elUniversal NewsSource = "El Universal"
 
+const elNacionalURL = "https://www.elnacional.com/politica"
+
 var elNacionalHostRegex = regexp.MustCompile(`elnacional`)
 var elUniversalHostRegex = regexp.MustCompile(`eluniversal`)
 var cnnHostRegex = regexp.MustCompile(`cnn`)
