@@ -12,18 +12,23 @@ import (
 var titleText = flag.String("title", "Title", "Text of the title header cell")
 var linkText = flag.String("link", "Link", "Text of the link header cell")
 var sourceText = flag.String("source", "Source", "Text of the source header cell")
+var help = flag.Bool("help", false, "Show help")
+var helpShort = flag.Bool("h", false, "")
 
 var mu sync.Mutex
 
 func main() {
+	flag.Usage = printHelp
 	flag.Parse()
 	log.SetFlags(0)
+	if *help || *helpShort {
+		flag.Usage()
+		os.Exit(0)
+	}
 	outputFilename := flag.Arg(0)
 	if outputFilename == "" {
 		log.Println("Output filename must be provided")
-		log.Println("\nUsage: golitiks <filename> [-title <title>] [-link <link>] [-source <source>]")
-		log.Println()
-		flag.PrintDefaults()
+		flag.Usage()
 		os.Exit(1)
 	}
 	newsStorage, err := NewNewsStorage(outputFilename, *titleText, *linkText, *sourceText)
@@ -63,6 +68,14 @@ outer:
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func printHelp() {
+	log.Println("Usage: golitiks <filename> [-title <title>] [-link <link>] [-source <source>]")
+	log.Println()
+	log.Println("Flags:")
+	log.Println()
+	flag.PrintDefaults()
 }
 
 func elNacionalScrapeFn(c *colly.Collector, datach chan<- NewsData, errch chan<- error) {
