@@ -40,7 +40,12 @@ func NewNewsStorage(filename, titleText, linkText, sourceText string) (*NewsStor
 	if err != nil {
 		return nil, err
 	}
+	// Set the column widths for better readability.
 	err = excelizeHandle.SetColWidth(sheetName, "A", "B", 40)
+	if err != nil {
+		return nil, err
+	}
+	err = excelizeHandle.SetColWidth(sheetName, "C", "C", 20)
 	if err != nil {
 		return nil, err
 	}
