@@ -12,6 +12,7 @@ require (
 	github.com/gocolly/colly v1.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/goodsign/monday v1.0.2 // indirect
 	github.com/jawher/mow.cli v1.2.0 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect

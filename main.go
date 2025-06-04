@@ -7,11 +7,13 @@ import (
 	"sync"
 
 	"github.com/gocolly/colly"
+	"github.com/goodsign/monday"
 )
 
 var titleText = flag.String("title", "Title", "Text of the title header cell")
 var linkText = flag.String("link", "Link", "Text of the link header cell")
 var sourceText = flag.String("source", "Source", "Text of the source header cell")
+var dateText = flag.String("date", "Date", "Text of the date header cell")
 var help = flag.Bool("help", false, "Show help")
 var helpShort = flag.Bool("h", false, "")
 
@@ -31,7 +33,7 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	newsStorage, err := NewNewsStorage(outputFilename, *titleText, *linkText, *sourceText)
+	newsStorage, err := NewNewsStorage(outputFilename, *titleText, *dateText, *sourceText, *linkText)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -83,10 +85,15 @@ func elNacionalScrapeFn(c *colly.Collector, datach chan<- NewsData, errch chan<-
 		link := e.ChildAttr("a", "href")
 		source := getNewsSource(e.Request.URL.Host)
 		title := e.ChildAttr("a", "title")
+		date, err := monday.Parse("January _2, 2006", e.ChildText(".content time"), monday.LocaleEsES)
+		if err != nil {
+			log.Println(err)
+		}
 		newsData := NewsData{
 			Title:  title,
 			Link:   link,
 			Source: source,
+			Date:   date,
 		}
 		datach <- newsData
 	})
@@ -94,10 +101,15 @@ func elNacionalScrapeFn(c *colly.Collector, datach chan<- NewsData, errch chan<-
 		title := e.ChildText(".content .title")
 		source := getNewsSource(e.Request.URL.Host)
 		link := e.ChildAttr(".image a", "href")
+		date, err := monday.Parse("January _2, 2006", e.ChildText(".content time"), monday.LocaleEsES)
+		if err != nil {
+			log.Println(err)
+		}
 		newsData := NewsData{
 			Title:  title,
 			Link:   link,
 			Source: source,
+			Date:   date,
 		}
 		datach <- newsData
 	})

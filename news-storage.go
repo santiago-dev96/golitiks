@@ -19,7 +19,7 @@ type NewsStorage struct {
 
 // NewNewsStorage initializes a NewsStorage
 // entity.
-func NewNewsStorage(filename, titleText, linkText, sourceText string) (*NewsStorage, error) {
+func NewNewsStorage(filename, titleText, dateText, sourceText, linkText string) (*NewsStorage, error) {
 	// Setup the excelize file and sheet.
 	excelizeHandle := excelize.NewFile()
 	index, err := excelizeHandle.NewSheet(sheetName)
@@ -32,7 +32,7 @@ func NewNewsStorage(filename, titleText, linkText, sourceText string) (*NewsStor
 	if err != nil {
 		return nil, err
 	}
-	err = excelizeHandle.SetCellValue(sheetName, "B1", linkText)
+	err = excelizeHandle.SetCellValue(sheetName, "B1", dateText)
 	if err != nil {
 		return nil, err
 	}
@@ -40,12 +40,16 @@ func NewNewsStorage(filename, titleText, linkText, sourceText string) (*NewsStor
 	if err != nil {
 		return nil, err
 	}
-	// Set the column widths for better readability.
-	err = excelizeHandle.SetColWidth(sheetName, "A", "B", 40)
+	err = excelizeHandle.SetCellValue(sheetName, "D1", linkText)
 	if err != nil {
 		return nil, err
 	}
-	err = excelizeHandle.SetColWidth(sheetName, "C", "C", 20)
+	// Set the column widths for better readability.
+	err = excelizeHandle.SetColWidth(sheetName, "A", "A", 60)
+	if err != nil {
+		return nil, err
+	}
+	err = excelizeHandle.SetColWidth(sheetName, "B", "D", 20)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +76,7 @@ func NewNewsStorage(filename, titleText, linkText, sourceText string) (*NewsStor
 	if err != nil {
 		return nil, err
 	}
-	err = excelizeHandle.SetCellStyle(sheetName, "A1", "C1", style)
+	err = excelizeHandle.SetCellStyle(sheetName, "A1", "D1", style)
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +94,34 @@ func (ns *NewsStorage) Store(data NewsData) error {
 	if err := ns.excelizeHandle.SetCellValue(sheetName, "A"+strconv.Itoa(row), data.Title); err != nil {
 		return err
 	}
-	if err := ns.excelizeHandle.SetCellValue(sheetName, "B"+strconv.Itoa(row), data.Link); err != nil {
+	if err := ns.excelizeHandle.SetCellValue(sheetName, "B"+strconv.Itoa(row), data.Date); err != nil {
 		return err
 	}
 	if err := ns.excelizeHandle.SetCellValue(sheetName, "C"+strconv.Itoa(row), string(data.Source)); err != nil {
+		return err
+	}
+	if err := ns.excelizeHandle.SetCellValue(sheetName, "D"+strconv.Itoa(row), "url"); err != nil {
+		return err
+	}
+	display, tooltip := "url", data.Title
+	if err := ns.excelizeHandle.SetCellHyperLink(sheetName, "D"+strconv.Itoa(row), data.Link, "External", excelize.HyperlinkOpts{
+		Display: &display,
+		Tooltip: &tooltip,
+	}); err != nil {
+		return err
+	}
+	// Set the font and underline style for the link cell.
+	style, err := ns.excelizeHandle.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Color: "1265BE", Underline: "single"},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+		},
+	})
+	if err != nil {
+		return err
+	}
+	err = ns.excelizeHandle.SetCellStyle(sheetName, "D"+strconv.Itoa(row), "D"+strconv.Itoa(row), style)
+	if err != nil {
 		return err
 	}
 	ns.recordsWritten++
