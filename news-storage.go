@@ -20,25 +20,62 @@ type NewsStorage struct {
 // NewNewsStorage initializes a NewsStorage
 // entity.
 func NewNewsStorage(filename, titleText, linkText, sourceText string) (*NewsStorage, error) {
-	file := excelize.NewFile()
-	index, err := file.NewSheet(sheetName)
+	// Setup the excelize file and sheet.
+	excelizeHandle := excelize.NewFile()
+	index, err := excelizeHandle.NewSheet(sheetName)
 	if err != nil {
 		return nil, err
 	}
-	err = file.SetCellValue(sheetName, "A1", titleText)
+
+	// Set the headers for the columns.
+	err = excelizeHandle.SetCellValue(sheetName, "A1", titleText)
 	if err != nil {
 		return nil, err
 	}
-	err = file.SetCellValue(sheetName, "B1", linkText)
+	err = excelizeHandle.SetCellValue(sheetName, "B1", linkText)
 	if err != nil {
 		return nil, err
 	}
-	err = file.SetCellValue(sheetName, "C1", sourceText)
+	err = excelizeHandle.SetCellValue(sheetName, "C1", sourceText)
 	if err != nil {
 		return nil, err
 	}
-	file.SetActiveSheet(index)
-	return &NewsStorage{excelizeHandle: file, filename: filename + ".xlsx"}, nil
+	err = excelizeHandle.SetColWidth(sheetName, "A", "B", 40)
+	if err != nil {
+		return nil, err
+	}
+	// Set the style for the header row.
+	style, err := excelizeHandle.NewStyle(&excelize.Style{
+		Font: &excelize.Font{
+			Bold: true,
+		},
+		Fill: excelize.Fill{
+			Type:    "pattern",
+			Color:   []string{"#D9EAD3"},
+			Pattern: 1,
+		},
+		Border: []excelize.Border{
+			{Type: "left", Color: "#000000", Style: 1},
+			{Type: "right", Color: "#000000", Style: 1},
+			{Type: "top", Color: "#000000", Style: 1},
+			{Type: "bottom", Color: "#000000", Style: 1},
+		},
+		Alignment: &excelize.Alignment{
+			Horizontal: "center",
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = excelizeHandle.SetCellStyle(sheetName, "A1", "C1", style)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the active sheet to the newly created one.
+	excelizeHandle.SetActiveSheet(index)
+
+	return &NewsStorage{excelizeHandle: excelizeHandle, filename: filename + ".xlsx"}, nil
 }
 
 // Store saves NewsData to the file
