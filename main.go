@@ -9,9 +9,9 @@ import (
 	"github.com/gocolly/colly"
 )
 
-var titleText = flag.String("title", "Title", "Title of the news article")
-var linkText = flag.String("link", "Link", "Link to the news article")
-var sourceText = flag.String("source", "Source", "Source of the news article")
+var titleText = flag.String("title", "Title", "Text of the title header cell")
+var linkText = flag.String("link", "Link", "Text of the link header cell")
+var sourceText = flag.String("source", "Source", "Text of the source header cell")
 
 var mu sync.Mutex
 
